@@ -1,50 +1,34 @@
-# Project 5 - Cloud DevOps Engineer Capstone Project
+# capstone
+Final project for Udacity Cloud DevOps Nanodegree
 
-> In this project, I applied my skills and knowledge which was developed throughout the Cloud DevOps Nanodegree program.
+Steps to build the pipeline
 
-## Project Tasks:
+## Build the image
+# Step1 build the image
+docker build -t raosuper/saas-website:latest .
 
-* Working in AWS
-* Using Jenkins to implement Continuous Integration and Continuous Deployment
-* Building pipelines
-* Working with CloudFormation to deploy clusters
-* Building Kubernetes clusters
-* Building Docker containers in pipelines
+# Step2 run the container and push it to docker cloud
+docker run --name mySaasSite -d  -p 8080:80 raosuper/saas-website:latest
+docker exec -it mySaasSite bash
+docker push raosuper/saas-website:latest
 
-## About Project: 
+## Build AWS EKS environments
+# Step3 build VPC
+aws cloudformation create-stack --stack-name capstone-vpc --template-body file://amazon-eks-vpc.yaml  --region=us-west-2
 
-> I created a CI/CD pipeline for a basic website that deploys to a cluster in AWS EKS which is Blue/Green Deployment.
+# Step4 build Role
+aws cloudformation create-stack --stack-name capstone-role --template-body file://amazon-eks-role.yaml  --region=us-west-2 --capabilities CAPABILITY_IAM
+aws cloudformation create-stack --stack-name capstone-nodegroup-role --template-body file://amazon-eks-nodegroup-role.yaml  --region=us-west-2 --capabilities CAPABILITY_IAM
 
-![img-1](Images-of-result-deploy/Project.png)
+# Step5 manually create the eks cluster on aws console
+# Reference : https://docs.aws.amazon.com/eks/latest/userguide/getting-started-console.html
 
-## Project Requirement:
+# Step6 Create a kubeconfig file and check configure status
+aws eks --region us-west-2 update-kubeconfig --name capstone
+kubectl get svc
 
-> To be able to use this CI/CD pipeline you will need to install:
+# Step7 manually create the node group
+# Reference : https://docs.aws.amazon.com/eks/latest/userguide/getting-started-console.html
 
-* Jenkins
-* Blue Ocean Plugin in Jenkins
-* Pipeline-AWS Plugin in Jenkins
-* Docker
-* Pip
-* AWS Cli
-* Eksctl
-* Kubectl
-
-## The files included are:
-```sh
-* /Images-of-result-deploy : Screenshot the result of deploy.
-* /Create-clusters-pipeline : CloudFormation Script of Cluster Pipeline file 
-* /Deploy-containers-pipeline : Deployment Script of Containers Pipeline file
-* Jenkinsfile : Jenkinsfile for Creating Pipeline
-* Dockerfile : Dockerfile for building the image 
-* green-controller.json : Create a replication controller green pod
-* green-service.json : Create the green service
-* blue-controller.json : Create a replication controller blue pod
-* blue-service.json : Create the blue service
-* index.html : Web site Index file.
-```
-
-## Run the project:
-```sh
-* Please follow to steps of screenshot in Images-of-result-deploy folder.
-```
+# Step8 wait for the nodes to become ready
+kubectl get nodes --watch
